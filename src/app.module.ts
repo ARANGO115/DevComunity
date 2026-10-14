@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import * as Joi from 'joi';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
+import { PublicacionesModule } from './publicaciones/publicaciones.module';
 import { RolesModule } from './roles/roles.module';
 import { UsersModule } from './users/users.module';
 
@@ -28,6 +29,7 @@ import { UsersModule } from './users/users.module';
       }),
     }),
     DatabaseModule,
+    PublicacionesModule,
     UsersModule,
     RolesModule,
     AuthModule,
