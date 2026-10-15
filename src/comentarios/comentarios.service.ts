@@ -1,13 +1,13 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { DataSource, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { AuthenticatedUser } from "../common/interfaces/authenticated-user.interface";
 import { UserRole } from "../common/enums/user-role.enum";
+import { Publicacion } from "../publicaciones/entities/publicacion.entity";
 import { ComentarioResponseDto } from "./dto/comentario-response.dto";
 import { CreateComentarioDto } from "./dto/create-comentario.dto";
 import { UpdateComentarioDto } from "./dto/update-comentario.dto";
@@ -18,7 +18,8 @@ export class ComentariosService {
   constructor(
     @InjectRepository(Comentario)
     private readonly comentariosRepository: Repository<Comentario>,
-    private readonly dataSource: DataSource,
+    @InjectRepository(Publicacion)
+    private readonly publicacionesRepository: Repository<Publicacion>,
   ) {}
 
   async create(
@@ -30,7 +31,7 @@ export class ComentariosService {
 
     const comentario = this.comentariosRepository.create({
       content: dto.content,
-      publicationId,
+      publication: { id: publicationId },
       author: { id: author.id },
     });
     const savedComentario = await this.comentariosRepository.save(comentario);
@@ -42,8 +43,8 @@ export class ComentariosService {
   ): Promise<ComentarioResponseDto[]> {
     await this.ensurePublicationExists(publicationId);
     const comentarios = await this.comentariosRepository.find({
-      where: { publicationId },
-      relations: { author: true },
+      where: { publication: { id: publicationId } },
+      relations: { author: true, publication: true },
       order: { createdAt: "ASC", id: "ASC" },
     });
     return comentarios.map((comentario) => this.toResponse(comentario));
@@ -74,17 +75,10 @@ export class ComentariosService {
   }
 
   private async ensurePublicationExists(publicationId: number): Promise<void> {
-    if (!Number.isSafeInteger(publicationId) || publicationId <= 0) {
-      throw new BadRequestException(
-        "El identificador de publicación no es válido.",
-      );
-    }
-
-    const publications: Array<{ id: number }> = await this.dataSource.query(
-      "SELECT `id` FROM `publications` WHERE `id` = ? LIMIT 1",
-      [publicationId],
-    );
-    if (publications.length === 0) {
+    const publicacion = await this.publicacionesRepository.findOneBy({
+      id: publicationId,
+    });
+    if (!publicacion) {
       throw new NotFoundException("La publicación no existe.");
     }
   }
@@ -92,7 +86,7 @@ export class ComentariosService {
   private async findCommentOrThrow(id: number): Promise<Comentario> {
     const comentario = await this.comentariosRepository.findOne({
       where: { id },
-      relations: { author: true },
+      relations: { author: true, publication: true },
     });
     if (!comentario) {
       throw new NotFoundException("El comentario no existe.");
@@ -111,13 +105,12 @@ export class ComentariosService {
     return {
       id: comentario.id,
       content: comentario.content,
-      publicationId: comentario.publicationId,
+      publicationId: comentario.publication.id,
       author: {
         id: comentario.author.id,
         name: comentario.author.name,
       },
       createdAt: comentario.createdAt,
-      updatedAt: comentario.updatedAt,
     };
   }
 }

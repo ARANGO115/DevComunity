@@ -4,6 +4,8 @@ import * as Joi from "joi";
 import { AuthModule } from "./auth/auth.module";
 import { ComentariosModule } from "./comentarios/comentarios.module";
 import { DatabaseModule } from "./database/database.module";
+import { PublicacionesModule } from "./publicaciones/publicaciones.module";
+import { ReaccionesModule } from "./reacciones/reacciones.module";
 import { RolesModule } from "./roles/roles.module";
 import { UsersModule } from "./users/users.module";
 
@@ -32,7 +34,9 @@ import { UsersModule } from "./users/users.module";
     UsersModule,
     RolesModule,
     AuthModule,
+    PublicacionesModule,
     ComentariosModule,
+    ReaccionesModule,
   ],
 })
 export class AppModule {}

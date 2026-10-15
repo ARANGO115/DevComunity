@@ -1,32 +1,36 @@
 import {
-  CreateDateColumn,
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from "typeorm";
+import { Publicacion } from "../../publicaciones/entities/publicacion.entity";
 import { User } from "../../users/entities/user.entity";
 
-@Entity("comments")
+@Entity("comentarios")
 export class Comentario {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: "varchar", length: 2000 })
+  @Column({ type: "text" })
   content: string;
-
-  @Column({ type: "int" })
-  publicationId: number;
-
-  @ManyToOne(() => User, { nullable: false, onDelete: "CASCADE" })
-  @JoinColumn({ name: "authorId" })
-  author: User;
 
   @CreateDateColumn({ type: "timestamp" })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: "timestamp" })
-  updatedAt: Date;
+  @ManyToOne(() => User, (user) => user.comments, {
+    nullable: false,
+    onDelete: "RESTRICT",
+  })
+  @JoinColumn({ name: "authorId" })
+  author: User;
+
+  @ManyToOne(() => Publicacion, (publication) => publication.comments, {
+    nullable: false,
+    onDelete: "CASCADE",
+  })
+  @JoinColumn({ name: "publicationId" })
+  publication: Publicacion;
 }

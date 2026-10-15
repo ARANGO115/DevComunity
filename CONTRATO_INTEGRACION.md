@@ -46,7 +46,17 @@ Antes de implementarla, comprobar si el repositorio ya tiene nombres establecido
 - `publication`: relación con `Publication`.
 - Restricción única sobre la pareja usuario-publicación.
 
+En el código actual, la entidad equivalente se denomina `Reaccion` y se persiste
+en `reacciones`, manteniendo la convención en español ya existente. Sus
+relaciones son `user` y `publication`; no debe crearse una segunda entidad
+`Like`.
+
 Si el proyecto ya utiliza entidades en español u otra convención coherente, no renombrarlas automáticamente: acordar una única convención y reflejarla aquí.
+
+### Implementación vigente de publicaciones
+- La clase TypeScript existente es `Publicacion`, mapeada a la tabla `publications`.
+- Sus propiedades son `id`, `title`, `content`, `createdAt` y `author`; la FK `authorId` referencia `users.id`.
+- Los DTO permiten `title` de hasta 255 caracteres y `content` de hasta 16 000 caracteres, sin permitir que el cliente establezca el autor.
 
 ## 3. Roles y permisos
 
@@ -99,12 +109,15 @@ Estas rutas son una propuesta inicial; comprobar las rutas existentes y actualiz
 - `PATCH /comments/:id`
 - `DELETE /comments/:id`
 
-El módulo de comentarios implementa estas rutas. El cuerpo de creación y edición contiene `content` (cadena no vacía de hasta 2000 caracteres); el autor se obtiene de `request.user`. La respuesta solo expone `id`, `content`, `publicationId`, `author` (`id`, `name`), `createdAt` y `updatedAt`. Solo el autor puede editar; el autor o MODERADOR puede eliminar. La consulta por publicación es pública.
+El módulo de comentarios implementa estas rutas. El cuerpo de creación y edición contiene `content` (cadena no vacía de hasta 2000 caracteres); el autor se obtiene de `request.user`. La respuesta solo expone `id`, `content`, `publicationId`, `author` (`id`, `name`) y `createdAt`. Solo el autor puede editar; el autor o MODERADOR puede eliminar. La consulta por publicación es pública.
 
 ### Likes
 - `POST /publications/:publicationId/likes`
 - `DELETE /publications/:publicationId/likes`
 - `GET /publications/:publicationId/likes/count`
+
+La implementación actual devuelve `409` para un like repetido, `404` para una
+publicación inexistente y `204` al retirar correctamente el like propio.
 
 Todas las rutas de escritura requieren autenticación. Las lecturas pueden ser públicas si el equipo confirma que no contradice otros requisitos.
 
@@ -117,8 +130,9 @@ Todas las rutas de escritura requieren autenticación. Las lecturas pueden ser p
 - Un usuario puede dar como máximo un like a una publicación.
 - La base de datos debe imponer una restricción única por usuario y publicación.
 - Al eliminar una publicación, sus comentarios deben eliminarse mediante cascada o lógica controlada y segura. Definir también el borrado de likes para evitar registros huérfanos.
+- El módulo de publicaciones no define relaciones con comentarios ni reacciones mientras esas entidades estén pendientes. Los módulos responsables deben usar FK con `ON DELETE CASCADE` o acordar una eliminación transaccional antes de crear esas tablas; la migración de publicaciones por sí sola no resuelve esa dependencia.
 - No usar sincronización destructiva de TypeORM en una base de datos con datos importantes. Coordinar migraciones.
-- **Dependencia de integración de comentarios:** `Comentario` persiste `publicationId` como entero y el servicio consulta la tabla `publications` (columna `id`) antes de crear/listar. Como la entidad y migración de publicaciones aún no están integradas, `CreateComments1760600000000` crea la FK a `users` pero no a `publications`. El módulo de publicaciones debe confirmar el nombre/tipo del ID, añadir/coordinar la FK `comments.publicationId` con borrado en cascada y asegurar que su migración cree `publications` antes de añadir esa restricción. No se añadió una entidad TypeORM ficticia o duplicada para publicaciones.
+- El módulo integrado usa `Publicacion` (`publicaciones`) y `Comentario` (`comentarios`) con una relación muchos-a-uno. La migración `CreatePublicationsCommentsAndReactions1760400000000` crea ambas tablas y configura `ON DELETE CASCADE` de publicación a comentarios. El servicio de comentarios valida y consulta publicaciones mediante el repositorio de `Publicacion`; no mantiene una entidad paralela ni una tabla redundante.
 
 ## 7. Formato de errores y respuestas
 
@@ -145,6 +159,5 @@ Antes de modificar una interfaz compartida, comunicar el cambio, actualizar este
 - Política de lecturas públicas o protegidas.
 - Formato común de respuestas y errores.
 - Estrategia de migraciones y entorno de pruebas.
-- Integración de la entidad/tabla `publications` con `comments.publicationId`, incluida la clave foránea y la cascada de borrado descritas en la sección 6.
 
 No asumir que estas decisiones están implementadas hasta verificarlas.

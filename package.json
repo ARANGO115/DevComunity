@@ -12,7 +12,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:e2e": "jest --runInBand test/auth-guards.e2e-spec.ts",
+    "test:e2e": "jest --runInBand test/auth-guards.e2e-spec.ts test/publicaciones.e2e-spec.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts"
   },

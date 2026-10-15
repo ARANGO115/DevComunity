@@ -6,9 +6,10 @@ import {
 } from "@nestjs/common";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
-import { DataSource, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { UserRole } from "../src/common/enums/user-role.enum";
 import { AuthenticatedUser } from "../src/common/interfaces/authenticated-user.interface";
+import { Publicacion } from "../src/publicaciones/entities/publicacion.entity";
 import { CreateComentarioDto } from "../src/comentarios/dto/create-comentario.dto";
 import { UpdateComentarioDto } from "../src/comentarios/dto/update-comentario.dto";
 import { Comentario } from "../src/comentarios/entities/comentario.entity";
@@ -23,7 +24,7 @@ describe("ComentariosService", () => {
     findOne: jest.Mock;
     remove: jest.Mock;
   };
-  let dataSource: { query: jest.Mock };
+  let publicationsRepository: { findOneBy: jest.Mock };
 
   const author: AuthenticatedUser = {
     id: 1,
@@ -40,7 +41,7 @@ describe("ComentariosService", () => {
   const comment = {
     id: 10,
     content: "Comentario inicial",
-    publicationId: 20,
+    publication: { id: 20 },
     author: {
       id: author.id,
       name: author.name,
@@ -57,12 +58,12 @@ describe("ComentariosService", () => {
       findOne: jest.fn().mockResolvedValue(comment),
       remove: jest.fn().mockResolvedValue(comment),
     };
-    dataSource = {
-      query: jest.fn().mockResolvedValue([{ id: 20 }]),
+    publicationsRepository = {
+      findOneBy: jest.fn().mockResolvedValue({ id: 20 }),
     };
     service = new ComentariosService(
       commentsRepository as unknown as Repository<Comentario>,
-      dataSource as unknown as DataSource,
+      publicationsRepository as unknown as Repository<Publicacion>,
     );
   });
 
@@ -75,19 +76,16 @@ describe("ComentariosService", () => {
       author,
     );
 
-    expect(dataSource.query).toHaveBeenCalledWith(
-      "SELECT `id` FROM `publications` WHERE `id` = ? LIMIT 1",
-      [20],
-    );
+    expect(publicationsRepository.findOneBy).toHaveBeenCalledWith({ id: 20 });
     expect(commentsRepository.create).toHaveBeenCalledWith({
       content: "Nuevo comentario",
-      publicationId: 20,
+      publication: { id: 20 },
       author: { id: author.id },
     });
     expect(commentsRepository.save).toHaveBeenCalled();
     expect(commentsRepository.findOne).toHaveBeenCalledWith({
       where: { id: 10 },
-      relations: { author: true },
+      relations: { author: true, publication: true },
     });
     expect(result.author).toEqual({ id: author.id, name: author.name });
     expect(JSON.stringify(result)).not.toContain("passwordHash");
@@ -95,7 +93,7 @@ describe("ComentariosService", () => {
   });
 
   it("does not create a comment for a missing publication", async () => {
-    dataSource.query.mockResolvedValue([]);
+    publicationsRepository.findOneBy.mockResolvedValue(null);
 
     await expect(
       service.create(
@@ -108,7 +106,7 @@ describe("ComentariosService", () => {
   });
 
   it("returns not found when listing comments for a missing publication", async () => {
-    dataSource.query.mockResolvedValue([]);
+    publicationsRepository.findOneBy.mockResolvedValue(null);
 
     await expect(service.findByPublication(404)).rejects.toBeInstanceOf(
       NotFoundException,
@@ -121,15 +119,14 @@ describe("ComentariosService", () => {
       {
         id: comment.id,
         content: comment.content,
-        publicationId: comment.publicationId,
+        publicationId: comment.publication.id,
         author: { id: author.id, name: author.name },
         createdAt: undefined,
-        updatedAt: undefined,
       },
     ]);
     expect(commentsRepository.find).toHaveBeenCalledWith({
-      where: { publicationId: 20 },
-      relations: { author: true },
+      where: { publication: { id: 20 } },
+      relations: { author: true, publication: true },
       order: { createdAt: "ASC", id: "ASC" },
     });
   });
@@ -146,7 +143,10 @@ describe("ComentariosService", () => {
   });
 
   it("updates a comment when requested by its author", async () => {
-    const editableComment = { ...comment, author: { id: author.id } };
+    const editableComment = {
+      ...comment,
+      author: { id: author.id, name: author.name },
+    };
     commentsRepository.findOne.mockResolvedValue(editableComment);
 
     await service.update(
