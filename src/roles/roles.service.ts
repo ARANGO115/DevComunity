@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { UserRole } from '../common/enums/user-role.enum';
+import { RoleResponseDto } from './dto/role-response.dto';
 import { Role } from './entities/role.entity';
 
 @Injectable()
@@ -22,7 +23,10 @@ export class RolesService implements OnModuleInit {
     return this.rolesRepository.findOneBy({ name });
   }
 
-  findAll(): Promise<Role[]> {
-    return this.rolesRepository.findBy({ name: In(Object.values(UserRole)) });
+  async findAll(): Promise<RoleResponseDto[]> {
+    const roles = await this.rolesRepository.findBy({
+      name: In(Object.values(UserRole)),
+    });
+    return roles.map(({ id, name }) => ({ id, name }));
   }
 }

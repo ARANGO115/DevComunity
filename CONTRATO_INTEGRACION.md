@@ -96,6 +96,16 @@ Estas rutas son una propuesta inicial; comprobar las rutas existentes y actualiz
 - `POST /auth/register`
 - `POST /auth/login`
 
+### Usuarios y roles (integrante 1)
+- `POST /users` — crear una cuenta como ADMIN; si se omite el rol se asigna `USUARIO`.
+- `GET /users` — listar usuarios como ADMIN.
+- `GET /users/:id` — consultar un usuario como ADMIN.
+- `PATCH /users/:id` — actualizar nombre, correo, contraseña o rol como ADMIN.
+- `DELETE /users/:id` — eliminar un usuario como ADMIN; se rechaza el borrado propio o si hay publicaciones, comentarios o reacciones asociadas.
+- `GET /roles` — listar los roles disponibles como ADMIN.
+
+Los roles son los valores fijos de `UserRole` (`ADMIN`, `MODERADOR`, `USUARIO`); no se crean, modifican ni eliminan por API. Las respuestas administrativas de usuarios no incluyen contraseña ni hash. El registro público continúa en `POST /auth/register` y no permite elegir un rol privilegiado.
+
 ### Publicaciones
 - `POST /publications`
 - `GET /publications`
