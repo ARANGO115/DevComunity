@@ -116,6 +116,7 @@ Todas las rutas de escritura requieren autenticación. Las lecturas pueden ser p
 - La base de datos debe imponer una restricción única por usuario y publicación.
 - Al eliminar una publicación, sus comentarios deben eliminarse mediante cascada o lógica controlada y segura. Definir también el borrado de likes para evitar registros huérfanos.
 - No usar sincronización destructiva de TypeORM en una base de datos con datos importantes. Coordinar migraciones.
+- **Dependencia de integración de comentarios:** el módulo de comentarios implementado usa la tabla `publications` con una columna `id` entera para comprobar la publicación al crear y listar comentarios. Como la entidad y la migración de publicaciones aún no están integradas, la migración actual de comentarios no crea todavía la clave foránea a `publications`. El módulo de publicaciones debe confirmar este nombre y tipo de ID, añadir/coordinar la clave foránea `comments.publicationId` con borrado en cascada y asegurar que su migración cree `publications` antes de añadir esa restricción.
 
 ## 7. Formato de errores y respuestas
 
@@ -142,5 +143,6 @@ Antes de modificar una interfaz compartida, comunicar el cambio, actualizar este
 - Política de lecturas públicas o protegidas.
 - Formato común de respuestas y errores.
 - Estrategia de migraciones y entorno de pruebas.
+- Integración de la entidad/tabla `publications` con `comments.publicationId`, incluida la clave foránea y la cascada de borrado descritas en la sección 6.
 
 No asumir que estas decisiones están implementadas hasta verificarlas.
