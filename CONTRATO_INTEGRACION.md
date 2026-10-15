@@ -46,6 +46,11 @@ Antes de implementarla, comprobar si el repositorio ya tiene nombres establecido
 - `publication`: relación con `Publication`.
 - Restricción única sobre la pareja usuario-publicación.
 
+En el código actual, la entidad equivalente se denomina `Reaccion` y se persiste
+en `reacciones`, manteniendo la convención en español ya existente. Sus
+relaciones son `user` y `publication`; no debe crearse una segunda entidad
+`Like`.
+
 Si el proyecto ya utiliza entidades en español u otra convención coherente, no renombrarlas automáticamente: acordar una única convención y reflejarla aquí.
 
 ### Implementación vigente de publicaciones
@@ -108,6 +113,9 @@ Estas rutas son una propuesta inicial; comprobar las rutas existentes y actualiz
 - `POST /publications/:publicationId/likes`
 - `DELETE /publications/:publicationId/likes`
 - `GET /publications/:publicationId/likes/count`
+
+La implementación actual devuelve `409` para un like repetido, `404` para una
+publicación inexistente y `204` al retirar correctamente el like propio.
 
 Todas las rutas de escritura requieren autenticación. Las lecturas pueden ser públicas si el equipo confirma que no contradice otros requisitos.
 

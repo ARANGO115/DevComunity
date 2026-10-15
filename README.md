@@ -33,6 +33,12 @@ Consulta `package.json` antes de usar comandos si los scripts del repositorio ti
 
 Swagger debe habilitarse en el código de NestJS. Cuando esté configurado, consulta la ruta que defina `src/main.ts` (por ejemplo, `/api` o `/api-docs`). No se asume una ruta hasta verificarla en el código.
 
+La documentación está disponible en `/docs`. Los endpoints de likes son:
+`POST /publications/:publicationId/likes`, `DELETE
+/publications/:publicationId/likes` y `GET
+/publications/:publicationId/likes/count`. Las escrituras requieren un bearer
+token emitido por autenticación.
+
 ## Documentos de equipo
 
 - `.github/copilot-instructions.md`: contexto y reglas compartidas para Copilot.
@@ -48,6 +54,11 @@ Swagger debe habilitarse en el código de NestJS. Cuando esté configurado, cons
 - Integrante 4: likes, revisión del modelo de datos, documentación y apoyo de integración.
 
 Cada integrante debe trabajar sobre una copia actualizada del repositorio y respetar el contrato compartido.
+
+La migración `CreatePublicationsCommentsAndReactions` crea las tablas
+compartidas de publicaciones, comentarios y likes/reacciones. Debe ejecutarse
+después de `CreateUsersAndRoles`, sin activar la sincronización destructiva de
+TypeORM.
 
 ## Seguridad
 
