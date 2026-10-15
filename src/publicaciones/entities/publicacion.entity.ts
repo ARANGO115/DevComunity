@@ -1,3 +1,5 @@
+
+import { ApiProperty } from '@nestjs/swagger';
 import {
   CreateDateColumn,
   Column,
@@ -13,18 +15,29 @@ import { User } from '../../users/entities/user.entity';
 
 @Entity('publicaciones')
 export class Publicacion {
+  @ApiProperty({ example: 1 })
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({ example: 'Ideas para la comunidad' })
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
+  @ApiProperty({ example: 'Contenido de la publicación.' })
   @Column({ type: 'text' })
   content: string;
 
+  @ApiProperty({ example: '2026-10-14T12:00:00.000Z' })
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 
+  @ApiProperty({
+    type: 'object',
+    properties: {
+      id: { type: 'number' },
+      name: { type: 'string' },
+    },
+  })
   @ManyToOne(() => User, (user) => user.publications, {
     nullable: false,
     onDelete: 'RESTRICT',
@@ -35,6 +48,6 @@ export class Publicacion {
   @OneToMany(() => Reaccion, (reaccion) => reaccion.publication)
   reactions: Reaccion[];
 
-  @OneToMany(() => Comentario, (comment) => comment.publication)
+  @OneToMany(() => Comentario, (comentario) => comentario.publication)
   comments: Comentario[];
 }

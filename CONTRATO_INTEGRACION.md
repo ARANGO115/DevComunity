@@ -53,6 +53,11 @@ relaciones son `user` y `publication`; no debe crearse una segunda entidad
 
 Si el proyecto ya utiliza entidades en español u otra convención coherente, no renombrarlas automáticamente: acordar una única convención y reflejarla aquí.
 
+### Implementación vigente de publicaciones
+- La clase TypeScript existente es `Publicacion`, mapeada a la tabla `publications`.
+- Sus propiedades son `id`, `title`, `content`, `createdAt` y `author`; la FK `authorId` referencia `users.id`.
+- Los DTO permiten `title` de hasta 255 caracteres y `content` de hasta 16 000 caracteres, sin permitir que el cliente establezca el autor.
+
 ## 3. Roles y permisos
 
 | Acción | USUARIO | MODERADOR | ADMIN |
@@ -123,6 +128,7 @@ Todas las rutas de escritura requieren autenticación. Las lecturas pueden ser p
 - Un usuario puede dar como máximo un like a una publicación.
 - La base de datos debe imponer una restricción única por usuario y publicación.
 - Al eliminar una publicación, sus comentarios deben eliminarse mediante cascada o lógica controlada y segura. Definir también el borrado de likes para evitar registros huérfanos.
+- El módulo de publicaciones no define relaciones con comentarios ni reacciones mientras esas entidades estén pendientes. Los módulos responsables deben usar FK con `ON DELETE CASCADE` o acordar una eliminación transaccional antes de crear esas tablas; la migración de publicaciones por sí sola no resuelve esa dependencia.
 - No usar sincronización destructiva de TypeORM en una base de datos con datos importantes. Coordinar migraciones.
 
 ## 7. Formato de errores y respuestas
