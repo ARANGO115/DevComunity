@@ -13,18 +13,20 @@ import {
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
 import { Request } from "express";
 import { AuthenticatedUser } from "../common/interfaces/authenticated-user.interface";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { ComentarioResponseDto } from "./dto/comentario-response.dto";
 import { CreateComentarioDto } from "./dto/create-comentario.dto";
 import { UpdateComentarioDto } from "./dto/update-comentario.dto";
-import { Comentario } from "./entities/comentario.entity";
 import { ComentariosService } from "./comentarios.service";
 
 type AuthenticatedRequest = Request & { user: AuthenticatedUser };
@@ -39,24 +41,25 @@ export class ComentariosController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Create a comment on a publication" })
   @ApiParam({ name: "publicationId", type: Number })
-  @ApiCreatedResponse({ type: Comentario })
+  @ApiCreatedResponse({ type: ComentarioResponseDto })
   @ApiNotFoundResponse({ description: "The publication does not exist." })
+  @ApiUnauthorizedResponse({ description: "Authentication is required." })
   create(
     @Param("publicationId", ParseIntPipe) publicationId: number,
     @Body() dto: CreateComentarioDto,
     @Req() request: AuthenticatedRequest,
-  ): Promise<Comentario> {
+  ): Promise<ComentarioResponseDto> {
     return this.comentariosService.create(publicationId, dto, request.user);
   }
 
   @Get("publications/:publicationId/comments")
   @ApiOperation({ summary: "List comments for a publication" })
   @ApiParam({ name: "publicationId", type: Number })
-  @ApiOkResponse({ type: Comentario, isArray: true })
+  @ApiOkResponse({ type: ComentarioResponseDto, isArray: true })
   @ApiNotFoundResponse({ description: "The publication does not exist." })
   findByPublication(
     @Param("publicationId", ParseIntPipe) publicationId: number,
-  ): Promise<Comentario[]> {
+  ): Promise<ComentarioResponseDto[]> {
     return this.comentariosService.findByPublication(publicationId);
   }
 
@@ -65,13 +68,15 @@ export class ComentariosController {
   @ApiBearerAuth()
   @ApiOperation({ summary: "Edit a comment owned by the current user" })
   @ApiParam({ name: "id", type: Number })
-  @ApiOkResponse({ type: Comentario })
+  @ApiOkResponse({ type: ComentarioResponseDto })
   @ApiNotFoundResponse({ description: "The comment does not exist." })
+  @ApiForbiddenResponse({ description: "Only the comment author can edit it." })
+  @ApiUnauthorizedResponse({ description: "Authentication is required." })
   update(
     @Param("id", ParseIntPipe) id: number,
     @Body() dto: UpdateComentarioDto,
     @Req() request: AuthenticatedRequest,
-  ): Promise<Comentario> {
+  ): Promise<ComentarioResponseDto> {
     return this.comentariosService.update(id, dto, request.user);
   }
 
@@ -83,6 +88,10 @@ export class ComentariosController {
   })
   @ApiParam({ name: "id", type: Number })
   @ApiNotFoundResponse({ description: "The comment does not exist." })
+  @ApiForbiddenResponse({
+    description: "Only the author or a moderator can delete the comment.",
+  })
+  @ApiUnauthorizedResponse({ description: "Authentication is required." })
   remove(
     @Param("id", ParseIntPipe) id: number,
     @Req() request: AuthenticatedRequest,

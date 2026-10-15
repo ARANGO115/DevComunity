@@ -8,6 +8,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
 import { AuthenticatedUser } from "../common/interfaces/authenticated-user.interface";
 import { UserRole } from "../common/enums/user-role.enum";
+import { ComentarioResponseDto } from "./dto/comentario-response.dto";
 import { CreateComentarioDto } from "./dto/create-comentario.dto";
 import { UpdateComentarioDto } from "./dto/update-comentario.dto";
 import { Comentario } from "./entities/comentario.entity";
@@ -24,7 +25,7 @@ export class ComentariosService {
     publicationId: number,
     dto: CreateComentarioDto,
     author: AuthenticatedUser,
-  ): Promise<Comentario> {
+  ): Promise<ComentarioResponseDto> {
     await this.ensurePublicationExists(publicationId);
 
     const comentario = this.comentariosRepository.create({
@@ -33,29 +34,32 @@ export class ComentariosService {
       author: { id: author.id },
     });
     const savedComentario = await this.comentariosRepository.save(comentario);
-    return this.findCommentOrThrow(savedComentario.id);
+    return this.toResponse(await this.findCommentOrThrow(savedComentario.id));
   }
 
-  async findByPublication(publicationId: number): Promise<Comentario[]> {
+  async findByPublication(
+    publicationId: number,
+  ): Promise<ComentarioResponseDto[]> {
     await this.ensurePublicationExists(publicationId);
-    return this.comentariosRepository.find({
+    const comentarios = await this.comentariosRepository.find({
       where: { publicationId },
       relations: { author: true },
       order: { createdAt: "ASC", id: "ASC" },
     });
+    return comentarios.map((comentario) => this.toResponse(comentario));
   }
 
   async update(
     id: number,
     dto: UpdateComentarioDto,
     user: AuthenticatedUser,
-  ): Promise<Comentario> {
+  ): Promise<ComentarioResponseDto> {
     const comentario = await this.findCommentOrThrow(id);
     this.ensureAuthor(comentario, user);
 
     comentario.content = dto.content;
     await this.comentariosRepository.save(comentario);
-    return this.findCommentOrThrow(comentario.id);
+    return this.toResponse(await this.findCommentOrThrow(comentario.id));
   }
 
   async remove(id: number, user: AuthenticatedUser): Promise<void> {
@@ -101,5 +105,19 @@ export class ComentariosService {
     if (comentario.author.id !== user.id) {
       throw new ForbiddenException("No puedes editar un comentario ajeno.");
     }
+  }
+
+  private toResponse(comentario: Comentario): ComentarioResponseDto {
+    return {
+      id: comentario.id,
+      content: comentario.content,
+      publicationId: comentario.publicationId,
+      author: {
+        id: comentario.author.id,
+        name: comentario.author.name,
+      },
+      createdAt: comentario.createdAt,
+      updatedAt: comentario.updatedAt,
+    };
   }
 }

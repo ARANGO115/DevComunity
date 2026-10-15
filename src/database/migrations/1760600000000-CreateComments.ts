@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class CreateComments1760400000000 implements MigrationInterface {
-  name = "CreateComments1760400000000";
+export class CreateComments1760600000000 implements MigrationInterface {
+  name = "CreateComments1760600000000";
 
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

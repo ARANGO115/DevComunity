@@ -1,10 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 class ComentarioAuthorDto {
   @ApiProperty({ example: 12 })
   id: number;
 
-  @ApiProperty({ example: 'Ada Lovelace' })
+  @ApiProperty({ example: "Ada Lovelace" })
   name: string;
 }
 
@@ -12,7 +12,7 @@ export class ComentarioResponseDto {
   @ApiProperty({ example: 34 })
   id: number;
 
-  @ApiProperty({ example: '¡Gracias por compartir esta solución!' })
+  @ApiProperty({ example: "¡Gracias por compartir esta solución!" })
   content: string;
 
   @ApiProperty({ example: 8 })

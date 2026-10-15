@@ -1,4 +1,11 @@
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+  ValidationPipe,
+} from "@nestjs/common";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 import { DataSource, Repository } from "typeorm";
 import { UserRole } from "../src/common/enums/user-role.enum";
 import { AuthenticatedUser } from "../src/common/interfaces/authenticated-user.interface";
@@ -34,7 +41,12 @@ describe("ComentariosService", () => {
     id: 10,
     content: "Comentario inicial",
     publicationId: 20,
-    author: { id: author.id },
+    author: {
+      id: author.id,
+      name: author.name,
+      email: author.email,
+      passwordHash: "must-not-be-returned",
+    },
   } as Comentario;
 
   beforeEach(() => {
@@ -57,7 +69,7 @@ describe("ComentariosService", () => {
   it("creates a comment using the authenticated author and existing publication", async () => {
     commentsRepository.save.mockResolvedValueOnce({ ...comment, id: 10 });
 
-    await service.create(
+    const result = await service.create(
       20,
       { content: "Nuevo comentario" } as CreateComentarioDto,
       author,
@@ -77,6 +89,9 @@ describe("ComentariosService", () => {
       where: { id: 10 },
       relations: { author: true },
     });
+    expect(result.author).toEqual({ id: author.id, name: author.name });
+    expect(JSON.stringify(result)).not.toContain("passwordHash");
+    expect(JSON.stringify(result)).not.toContain(author.email);
   });
 
   it("does not create a comment for a missing publication", async () => {
@@ -92,8 +107,26 @@ describe("ComentariosService", () => {
     expect(commentsRepository.save).not.toHaveBeenCalled();
   });
 
+  it("returns not found when listing comments for a missing publication", async () => {
+    dataSource.query.mockResolvedValue([]);
+
+    await expect(service.findByPublication(404)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(commentsRepository.find).not.toHaveBeenCalled();
+  });
+
   it("lists comments for an existing publication in chronological order", async () => {
-    await expect(service.findByPublication(20)).resolves.toEqual([comment]);
+    await expect(service.findByPublication(20)).resolves.toEqual([
+      {
+        id: comment.id,
+        content: comment.content,
+        publicationId: comment.publicationId,
+        author: { id: author.id, name: author.name },
+        createdAt: undefined,
+        updatedAt: undefined,
+      },
+    ]);
     expect(commentsRepository.find).toHaveBeenCalledWith({
       where: { publicationId: 20 },
       relations: { author: true },
@@ -151,5 +184,41 @@ describe("ComentariosService", () => {
       ForbiddenException,
     );
     expect(commentsRepository.remove).not.toHaveBeenCalled();
+  });
+});
+
+describe("Comentario DTO validation", () => {
+  it("trims and accepts non-empty comment content", async () => {
+    const dto = plainToInstance(CreateComentarioDto, {
+      content: "  Comentario válido  ",
+    });
+
+    expect(dto.content).toBe("Comentario válido");
+    await expect(validate(dto)).resolves.toHaveLength(0);
+  });
+
+  it("rejects blank content and content longer than 2000 characters", async () => {
+    const blank = plainToInstance(UpdateComentarioDto, { content: "   " });
+    const tooLong = plainToInstance(CreateComentarioDto, {
+      content: "x".repeat(2001),
+    });
+
+    expect(await validate(blank)).not.toHaveLength(0);
+    expect(await validate(tooLong)).not.toHaveLength(0);
+  });
+
+  it("rejects client-supplied author identifiers in request bodies", async () => {
+    const pipe = new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    });
+
+    await expect(
+      pipe.transform(
+        { content: "Comentario", authorId: 999 },
+        { type: "body", metatype: CreateComentarioDto },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

@@ -99,6 +99,8 @@ Estas rutas son una propuesta inicial; comprobar las rutas existentes y actualiz
 - `PATCH /comments/:id`
 - `DELETE /comments/:id`
 
+El módulo de comentarios implementa estas rutas. El cuerpo de creación y edición contiene `content` (cadena no vacía de hasta 2000 caracteres); el autor se obtiene de `request.user`. La respuesta solo expone `id`, `content`, `publicationId`, `author` (`id`, `name`), `createdAt` y `updatedAt`. Solo el autor puede editar; el autor o MODERADOR puede eliminar. La consulta por publicación es pública.
+
 ### Likes
 - `POST /publications/:publicationId/likes`
 - `DELETE /publications/:publicationId/likes`
@@ -116,7 +118,7 @@ Todas las rutas de escritura requieren autenticación. Las lecturas pueden ser p
 - La base de datos debe imponer una restricción única por usuario y publicación.
 - Al eliminar una publicación, sus comentarios deben eliminarse mediante cascada o lógica controlada y segura. Definir también el borrado de likes para evitar registros huérfanos.
 - No usar sincronización destructiva de TypeORM en una base de datos con datos importantes. Coordinar migraciones.
-- **Dependencia de integración de comentarios:** el módulo de comentarios implementado usa la tabla `publications` con una columna `id` entera para comprobar la publicación al crear y listar comentarios. Como la entidad y la migración de publicaciones aún no están integradas, la migración actual de comentarios no crea todavía la clave foránea a `publications`. El módulo de publicaciones debe confirmar este nombre y tipo de ID, añadir/coordinar la clave foránea `comments.publicationId` con borrado en cascada y asegurar que su migración cree `publications` antes de añadir esa restricción.
+- **Dependencia de integración de comentarios:** `Comentario` persiste `publicationId` como entero y el servicio consulta la tabla `publications` (columna `id`) antes de crear/listar. Como la entidad y migración de publicaciones aún no están integradas, `CreateComments1760600000000` crea la FK a `users` pero no a `publications`. El módulo de publicaciones debe confirmar el nombre/tipo del ID, añadir/coordinar la FK `comments.publicationId` con borrado en cascada y asegurar que su migración cree `publications` antes de añadir esa restricción. No se añadió una entidad TypeORM ficticia o duplicada para publicaciones.
 
 ## 7. Formato de errores y respuestas
 
