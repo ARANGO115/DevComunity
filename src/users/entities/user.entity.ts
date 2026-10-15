@@ -4,9 +4,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Role } from '../../roles/entities/role.entity';
+import { Reaccion } from '../../reacciones/entities/reaccion.entity';
+import { Publicacion } from '../../publicaciones/entities/publicacion.entity';
+import { Comentario } from '../../comentarios/entities/comentario.entity';
 
 @Entity('users')
 export class User {
@@ -29,6 +33,15 @@ export class User {
   })
   @JoinColumn({ name: 'roleId' })
   role: Role;
+
+  @OneToMany(() => Reaccion, (reaccion) => reaccion.user)
+  reactions: Reaccion[];
+
+  @OneToMany(() => Publicacion, (publication) => publication.author)
+  publications: Publicacion[];
+
+  @OneToMany(() => Comentario, (comment) => comment.author)
+  comments: Comentario[];
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
