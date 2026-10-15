@@ -12,6 +12,7 @@ import {
 } from "@nestjs/common";
 import {
   ApiBearerAuth,
+  ApiBadRequestResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -42,6 +43,9 @@ export class ComentariosController {
   @ApiOperation({ summary: "Create a comment on a publication" })
   @ApiParam({ name: "publicationId", type: Number })
   @ApiCreatedResponse({ type: ComentarioResponseDto })
+  @ApiBadRequestResponse({
+    description: "The publication ID or request body is invalid.",
+  })
   @ApiNotFoundResponse({ description: "The publication does not exist." })
   @ApiUnauthorizedResponse({ description: "Authentication is required." })
   create(
@@ -56,6 +60,9 @@ export class ComentariosController {
   @ApiOperation({ summary: "List comments for a publication" })
   @ApiParam({ name: "publicationId", type: Number })
   @ApiOkResponse({ type: ComentarioResponseDto, isArray: true })
+  @ApiBadRequestResponse({
+    description: "The publication ID must be an integer.",
+  })
   @ApiNotFoundResponse({ description: "The publication does not exist." })
   findByPublication(
     @Param("publicationId", ParseIntPipe) publicationId: number,
@@ -69,6 +76,9 @@ export class ComentariosController {
   @ApiOperation({ summary: "Edit a comment owned by the current user" })
   @ApiParam({ name: "id", type: Number })
   @ApiOkResponse({ type: ComentarioResponseDto })
+  @ApiBadRequestResponse({
+    description: "The comment ID or request body is invalid.",
+  })
   @ApiNotFoundResponse({ description: "The comment does not exist." })
   @ApiForbiddenResponse({ description: "Only the comment author can edit it." })
   @ApiUnauthorizedResponse({ description: "Authentication is required." })
@@ -87,6 +97,8 @@ export class ComentariosController {
     summary: "Delete a comment owned by the current user or a moderator",
   })
   @ApiParam({ name: "id", type: Number })
+  @ApiOkResponse({ description: "Comment deleted." })
+  @ApiBadRequestResponse({ description: "The comment ID must be an integer." })
   @ApiNotFoundResponse({ description: "The comment does not exist." })
   @ApiForbiddenResponse({
     description: "Only the author or a moderator can delete the comment.",
