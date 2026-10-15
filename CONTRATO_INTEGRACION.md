@@ -109,6 +109,8 @@ Estas rutas son una propuesta inicial; comprobar las rutas existentes y actualiz
 - `PATCH /comments/:id`
 - `DELETE /comments/:id`
 
+El módulo de comentarios implementa estas rutas. El cuerpo de creación y edición contiene `content` (cadena no vacía de hasta 2000 caracteres); el autor se obtiene de `request.user`. La respuesta solo expone `id`, `content`, `publicationId`, `author` (`id`, `name`) y `createdAt`. Solo el autor puede editar; el autor o MODERADOR puede eliminar. La consulta por publicación es pública.
+
 ### Likes
 - `POST /publications/:publicationId/likes`
 - `DELETE /publications/:publicationId/likes`
@@ -130,6 +132,7 @@ Todas las rutas de escritura requieren autenticación. Las lecturas pueden ser p
 - Al eliminar una publicación, sus comentarios deben eliminarse mediante cascada o lógica controlada y segura. Definir también el borrado de likes para evitar registros huérfanos.
 - El módulo de publicaciones no define relaciones con comentarios ni reacciones mientras esas entidades estén pendientes. Los módulos responsables deben usar FK con `ON DELETE CASCADE` o acordar una eliminación transaccional antes de crear esas tablas; la migración de publicaciones por sí sola no resuelve esa dependencia.
 - No usar sincronización destructiva de TypeORM en una base de datos con datos importantes. Coordinar migraciones.
+- El módulo integrado usa `Publicacion` (`publicaciones`) y `Comentario` (`comentarios`) con una relación muchos-a-uno. La migración `CreatePublicationsCommentsAndReactions1760400000000` crea ambas tablas y configura `ON DELETE CASCADE` de publicación a comentarios. El servicio de comentarios valida y consulta publicaciones mediante el repositorio de `Publicacion`; no mantiene una entidad paralela ni una tabla redundante.
 
 ## 7. Formato de errores y respuestas
 
